@@ -1,0 +1,32 @@
+name: Fetch translation runtime
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fetch-translation-runtime.yml'
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download CTranslate2 wheel and EN-ZH model
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p runtime/model
+          curl -L --fail --retry 5 \
+            'https://files.pythonhosted.org/packages/77/6d/131193b68d3884f9ab9474d916c6244df2914fbb3234d2a4c1fada72b1d6/ctranslate2-4.6.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl' \
+            -o runtime/ctranslate2-4.6.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+          base='https://raw.githubusercontent.com/zhangrr/ios-translate/main/opus-mt-small320d-opus100-joint32k-ft-money-coffee-ct2-int8'
+          for f in config.json model.bin shared_vocabulary.json source.spm target.spm; do
+            curl -L --fail --retry 5 "$base/$f" -o "runtime/model/$f"
+          done
+          sha256sum runtime/* runtime/model/* || true
+      - name: Upload translation runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: translation-runtime
+          path: runtime
+          if-no-files-found: error
+          retention-days: 1
