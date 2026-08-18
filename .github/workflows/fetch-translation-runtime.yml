@@ -16,31 +16,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download CTranslate2 wheel and full EN-ZH model
+      - name: Download QuickMT English-Chinese CTranslate2 model
         shell: bash
         run: |
           set -euxo pipefail
           rm -rf runtime
           mkdir -p runtime/model
-          curl -L --fail --retry 5 \
-            'https://files.pythonhosted.org/packages/77/6d/131193b68d3884f9ab9474d916c6244df2914fbb3234d2a4c1fada72b1d6/ctranslate2-4.6.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl' \
-            -o runtime/ctranslate2-4.6.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-          base='https://huggingface.co/manancode/opus-mt-en-zh-ctranslate2-android/resolve/main'
-          for f in config.json model.bin shared_vocabulary.json source.spm target.spm tokenizer_config.json vocab.json; do
+          base='https://huggingface.co/quickmt/quickmt-en-zh/resolve/main'
+          for f in config.json model.bin source_vocabulary.json target_vocabulary.json src.spm.model tgt.spm.model eole-config.yaml; do
             curl -L --fail --retry 5 "$base/$f?download=true" -o "runtime/model/$f"
           done
-          sha256sum runtime/* runtime/model/* || true
+          sha256sum runtime/model/* || true
           du -sh runtime
 
       - name: Upload translation runtime
         id: upload
         uses: actions/upload-artifact@v4
         with:
-          name: translation-runtime-full
+          name: translation-runtime-quickmt
           path: runtime
           if-no-files-found: error
           retention-days: 1
-          compression-level: 6
+          compression-level: 1
 
       - name: Publish artifact metadata
         shell: bash
@@ -51,12 +48,12 @@ jobs:
             "run_id": "${GITHUB_RUN_ID}",
             "artifact_id": "${{ steps.upload.outputs.artifact-id }}",
             "artifact_url": "${{ steps.upload.outputs.artifact-url }}",
-            "artifact_name": "translation-runtime-full",
+            "artifact_name": "translation-runtime-quickmt",
             "updated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           }
           EOF
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add runtime-artifact.json
-          git commit -m 'Publish full translation runtime artifact metadata' || true
+          git commit -m 'Publish QuickMT translation runtime artifact metadata' || true
           git push
