@@ -21,12 +21,19 @@ jobs:
         run: |
           set -euxo pipefail
           rm -rf runtime
-          mkdir -p runtime/model
+          mkdir -p runtime/model runtime/wheels
           base='https://huggingface.co/quickmt/quickmt-en-zh/resolve/main'
           for f in config.json model.bin source_vocabulary.json target_vocabulary.json src.spm.model tgt.spm.model eole-config.yaml; do
             curl -L --fail --retry 5 "$base/$f?download=true" -o "runtime/model/$f"
           done
-          sha256sum runtime/model/* || true
+          python -m pip download --only-binary=:all: --no-deps \
+            --platform manylinux2014_x86_64 \
+            --implementation cp \
+            --python-version 3.13 \
+            --abi cp313 \
+            ctranslate2==4.8.1 \
+            --dest runtime/wheels
+          sha256sum runtime/model/* runtime/wheels/* || true
           du -sh runtime
 
       - name: Upload translation runtime
