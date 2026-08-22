@@ -1,1 +1,2 @@
 Temporary trigger for refreshing the CTranslate2 translation-runtime artifact.
+Retry with an available CPython 3.13 wheel.
