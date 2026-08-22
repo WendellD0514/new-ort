@@ -4,9 +4,6 @@ on:
   push:
     paths:
       - '.github/workflows/fetch-translation-runtime.yml'
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -24,19 +21,12 @@ jobs:
         run: |
           set -euxo pipefail
           rm -rf runtime
-          mkdir -p runtime/model runtime/wheels
+          mkdir -p runtime/model
           base='https://huggingface.co/quickmt/quickmt-en-zh/resolve/main'
           for f in config.json model.bin source_vocabulary.json target_vocabulary.json src.spm.model tgt.spm.model eole-config.yaml; do
             curl -L --fail --retry 5 "$base/$f?download=true" -o "runtime/model/$f"
           done
-          python -m pip download --only-binary=:all: --no-deps \
-            --platform manylinux2014_x86_64 \
-            --implementation cp \
-            --python-version 3.13 \
-            --abi cp313 \
-            ctranslate2==4.6.2 \
-            --dest runtime/wheels
-          sha256sum runtime/model/* runtime/wheels/* || true
+          sha256sum runtime/model/* || true
           du -sh runtime
 
       - name: Upload translation runtime
@@ -50,7 +40,6 @@ jobs:
           compression-level: 1
 
       - name: Publish artifact metadata
-        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euxo pipefail
