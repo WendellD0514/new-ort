@@ -34,7 +34,7 @@ jobs:
             --implementation cp \
             --python-version 3.13 \
             --abi cp313 \
-            ctranslate2==4.8.1 \
+            ctranslate2==4.6.2 \
             --dest runtime/wheels
           sha256sum runtime/model/* runtime/wheels/* || true
           du -sh runtime
